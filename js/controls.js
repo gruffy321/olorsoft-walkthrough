@@ -128,7 +128,7 @@ class WalkthroughControls {
 
         // Look (Right side)
         const touchZoneR = document.createElement('div');
-        touchZoneR.style.cssText = 'position:absolute; top:0; right:0; width:50%; height:100%; z-index:10; touch-action:none;';
+        touchZoneR.style.cssText = 'position:absolute; top:0; right:0; width:50%; height:100%; z-index:5; touch-action:none;';
         document.body.appendChild(touchZoneR);
 
         let lastTouchR = null;

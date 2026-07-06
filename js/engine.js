@@ -94,7 +94,8 @@ class WalkthroughEngine {
         
         const btnClose = document.getElementById('closeModalBtn');
         if (btnClose) {
-            btnClose.addEventListener('click', (e) => {
+            const closeAction = (e) => {
+                e.preventDefault();
                 e.stopPropagation(); // Prevent bubbling up to document and triggering pointer lock error
                 this.itemModal.classList.add('hidden');
                 
@@ -102,7 +103,9 @@ class WalkthroughEngine {
                 if (window.AppControls && window.AppControls.isDesktop) {
                     document.body.requestPointerLock();
                 }
-            });
+            };
+            btnClose.addEventListener('click', closeAction);
+            btnClose.addEventListener('touchstart', closeAction, {passive: false});
         }
 
         // Add Environment Particles
@@ -146,10 +149,13 @@ class WalkthroughEngine {
         const slots = Array.from(document.querySelectorAll('.inv-slot'));
         
         slots.forEach(slot => {
-            slot.addEventListener('click', (e) => {
+            const selectTool = (e) => {
+                e.preventDefault(); // Prevent double firing on mobile
                 e.stopPropagation(); // Prevent inventory clicks from triggering 3D slaps
                 this.setActiveTool(e.currentTarget.dataset.tool);
-            });
+            };
+            slot.addEventListener('click', selectTool);
+            slot.addEventListener('touchstart', selectTool, {passive: false});
         });
 
         // Mouse Wheel scrolling for tools
@@ -169,12 +175,15 @@ class WalkthroughEngine {
         // Paint Palette Listeners
         const swatches = document.querySelectorAll('.color-swatch');
         swatches.forEach(swatch => {
-            swatch.addEventListener('click', (e) => {
+            const selectColor = (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 swatches.forEach(s => s.classList.remove('active'));
                 e.currentTarget.classList.add('active');
                 this.paintColor = e.currentTarget.dataset.color;
-            });
+            };
+            swatch.addEventListener('click', selectColor);
+            swatch.addEventListener('touchstart', selectColor, {passive: false});
         });
         
         const sizeInput = document.getElementById('brushSize');
