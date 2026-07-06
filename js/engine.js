@@ -142,9 +142,10 @@ class WalkthroughEngine {
         const slots = document.querySelectorAll('.inv-slot');
         slots.forEach(slot => {
             slot.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent inventory clicks from triggering 3D slaps
                 slots.forEach(s => s.classList.remove('active'));
-                e.target.classList.add('active');
-                this.activeTool = e.target.dataset.tool;
+                e.currentTarget.classList.add('active');
+                this.activeTool = e.currentTarget.dataset.tool;
             });
         });
     }
@@ -298,9 +299,9 @@ class WalkthroughEngine {
                 // Slap the object! (Apply Physics Impulse)
                 if (targetObj.userData.physicsBody) {
                     const dir = this.raycaster.ray.direction;
-                    // Apply a softer impulse forward and slightly up so it stays on grid
-                    const force = new CANNON.Vec3(dir.x * 50, 20, dir.z * 50);
-                    targetObj.userData.physicsBody.applyImpulse(force, new CANNON.Vec3(0,0,0));
+                    // Apply a gentle shove so it tumbles over to reveal other dirty sides
+                    const force = new CANNON.Vec3(dir.x * 20, 5, dir.z * 20);
+                    targetObj.userData.physicsBody.applyImpulse(force, new CANNON.Vec3(0, 0.5, 0)); // Apply slightly off-center to encourage tumbling
                 }
                 
                 // Unlock pointer to allow interacting with the modal
