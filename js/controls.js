@@ -109,6 +109,8 @@ class WalkthroughControls {
         // UI Buttons
         const btnForward = document.getElementById('btnForward');
         const btnBackward = document.getElementById('btnBackward');
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
         const btnJump = document.getElementById('btnJump');
 
         // Movement handlers
@@ -117,6 +119,14 @@ class WalkthroughControls {
         
         btnBackward.addEventListener('touchstart', (e) => { e.preventDefault(); this.moveBackward = true; }, {passive: false});
         btnBackward.addEventListener('touchend', (e) => { e.preventDefault(); this.moveBackward = false; });
+
+        if (btnLeft && btnRight) {
+            btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); this.moveLeft = true; }, {passive: false});
+            btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); this.moveLeft = false; });
+            
+            btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); this.moveRight = true; }, {passive: false});
+            btnRight.addEventListener('touchend', (e) => { e.preventDefault(); this.moveRight = false; });
+        }
 
         btnJump.addEventListener('touchstart', (e) => {
             e.preventDefault();

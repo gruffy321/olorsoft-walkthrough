@@ -246,30 +246,36 @@ body, html {
 
 #mobileControls {
     position: absolute;
-    bottom: 20px;
-    left: 0;
-    width: 100%;
-    pointer-events: none; /* Let clicks pass through except on buttons */
+    bottom: 30px;
+    left: 20px;
+    display: flex;
+    gap: 15px;
+    z-index: 100;
 }
-
-#mobileLeftCol {
-    position: absolute;
-    bottom: 0;
-    left: 30px;
+#mobileControls.hidden {
+    display: none;
+}
+#joystick-left {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    align-items: center;
+    gap: 10px;
     pointer-events: auto;
 }
-
-#mobileRightCol {
-    position: absolute;
-    bottom: 0;
-    right: 30px;
+.strafe-row {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
-    pointer-events: auto;
+    gap: 10px;
+}
+#joystick-left .glass-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    user-select: none;
 }
 
 .icon-btn {

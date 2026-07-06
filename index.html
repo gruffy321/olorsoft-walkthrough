@@ -51,15 +51,17 @@
         <div id="crosshair" aria-hidden="true"></div>
 
         <!-- Mobile Controls (Hidden on Desktop) -->
-        <div id="mobileControls" class="mobile-only" aria-hidden="true">
-            <div id="mobileLeftCol">
-                <button id="btnForward" class="glass-btn icon-btn" title="Move Forward">W</button>
-                <button id="btnBackward" class="glass-btn icon-btn" title="Move Backward">S</button>
+        <div id="mobileControls" class="hidden">
+            <div id="joystick-left">
+                <button id="btnForward" class="glass-btn">W</button>
+                <div class="strafe-row">
+                    <button id="btnLeft" class="glass-btn">A</button>
+                    <button id="btnBackward" class="glass-btn">S</button>
+                    <button id="btnRight" class="glass-btn">D</button>
+                </div>
+                <button id="btnJump" class="glass-btn">Jump</button>
             </div>
-            <div id="mobileRightCol">
-                <button id="btnJump" class="glass-btn icon-btn" title="Jump">JUMP</button>
-                <button id="btnInteract" class="glass-btn icon-btn" title="Interact">ACT</button>
-            </div>
+            <!-- joystick-right is handled by pure touch zone in JS -->
         </div>
 
         <!-- Portfolio Item Modal (Glassmorphism) -->

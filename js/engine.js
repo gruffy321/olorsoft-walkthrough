@@ -260,6 +260,7 @@ class WalkthroughEngine {
         });
         
         this.waterParticles = new THREE.Points(this.waterGeometry, waterMaterial);
+        this.waterParticles.frustumCulled = false; // Fix: Prevent particles from disappearing when looking away from origin
         this.waterVelocities = velocities;
         this.scene.add(this.waterParticles);
     }
