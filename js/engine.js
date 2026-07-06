@@ -80,6 +80,9 @@ class WalkthroughEngine {
 
         // Inventory System
         this.activeTool = 'hands';
+        this.paintColor = '#ef4444';
+        this.paintSize = 15;
+        this.paintPalette = document.getElementById('paintPalette');
         this.initInventory();
 
         // UI Elements
@@ -104,8 +107,9 @@ class WalkthroughEngine {
 
         // Add Environment Particles
         this.initParticles();
+        this.initWaterParticles();
 
-        // Bind events
+        // Load Room Datas
         window.addEventListener('resize', this.onWindowResize.bind(this));
         
         // Handle Clicks for Interaction
@@ -139,15 +143,66 @@ class WalkthroughEngine {
     }
 
     initInventory() {
-        const slots = document.querySelectorAll('.inv-slot');
+        const slots = Array.from(document.querySelectorAll('.inv-slot'));
+        
         slots.forEach(slot => {
             slot.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent inventory clicks from triggering 3D slaps
-                slots.forEach(s => s.classList.remove('active'));
-                e.currentTarget.classList.add('active');
-                this.activeTool = e.currentTarget.dataset.tool;
+                this.setActiveTool(e.currentTarget.dataset.tool);
             });
         });
+
+        // Mouse Wheel scrolling for tools
+        document.addEventListener('wheel', (e) => {
+            const currentIndex = slots.findIndex(s => s.dataset.tool === this.activeTool);
+            if (currentIndex === -1) return;
+            
+            let nextIndex = currentIndex;
+            if (e.deltaY > 0) nextIndex = (currentIndex + 1) % slots.length;
+            if (e.deltaY < 0) nextIndex = (currentIndex - 1 + slots.length) % slots.length;
+            
+            if (nextIndex !== currentIndex) {
+                this.setActiveTool(slots[nextIndex].dataset.tool);
+            }
+        });
+
+        // Paint Palette Listeners
+        const swatches = document.querySelectorAll('.color-swatch');
+        swatches.forEach(swatch => {
+            swatch.addEventListener('click', (e) => {
+                e.stopPropagation();
+                swatches.forEach(s => s.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.paintColor = e.currentTarget.dataset.color;
+            });
+        });
+        
+        const sizeInput = document.getElementById('brushSize');
+        if (sizeInput) {
+            sizeInput.addEventListener('input', (e) => {
+                e.stopPropagation();
+                this.paintSize = parseInt(e.target.value);
+            });
+            sizeInput.addEventListener('mousedown', e => e.stopPropagation());
+            sizeInput.addEventListener('touchstart', e => e.stopPropagation(), {passive: true});
+        }
+    }
+
+    setActiveTool(toolName) {
+        this.activeTool = toolName;
+        const slots = document.querySelectorAll('.inv-slot');
+        slots.forEach(s => {
+            if(s.dataset.tool === toolName) s.classList.add('active');
+            else s.classList.remove('active');
+        });
+        
+        if (this.paintPalette) {
+            if (toolName === 'brush') {
+                this.paintPalette.classList.remove('hidden');
+            } else {
+                this.paintPalette.classList.add('hidden');
+            }
+        }
     }
 
     initParticles() {
@@ -172,7 +227,68 @@ class WalkthroughEngine {
         this.scene.add(this.particles);
     }
 
-    async init() {
+    initWaterParticles() {
+        const particleCount = 200;
+        this.waterGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = [];
+        const lifetimes = new Float32Array(particleCount);
+        
+        for(let i=0; i<particleCount; i++) {
+            positions[i*3] = 0; positions[i*3+1] = -100; positions[i*3+2] = 0; // hide initially
+            velocities.push(new THREE.Vector3(0,0,0));
+            lifetimes[i] = 0; 
+        }
+        
+        this.waterGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        this.waterGeometry.setAttribute('lifetime', new THREE.BufferAttribute(lifetimes, 1));
+        
+        const waterMaterial = new THREE.PointsMaterial({
+            color: 0x60a5fa,
+            size: 0.15,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        this.waterParticles = new THREE.Points(this.waterGeometry, waterMaterial);
+        this.waterVelocities = velocities;
+        this.scene.add(this.waterParticles);
+    }
+
+    emitWaterParticles(targetPoint) {
+        if (!this.waterParticles) return;
+        const lifetimes = this.waterParticles.geometry.attributes.lifetime.array;
+        const positions = this.waterParticles.geometry.attributes.position.array;
+        
+        let spawned = 0;
+        for(let i=0; i<lifetimes.length; i++) {
+            if (lifetimes[i] <= 0) {
+                const startPos = new THREE.Vector3().copy(this.camera.position);
+                startPos.y -= 0.3; // spawn below camera (like a nozzle)
+                
+                positions[i*3] = startPos.x;
+                positions[i*3+1] = startPos.y;
+                positions[i*3+2] = startPos.z;
+                
+                const vel = new THREE.Vector3().subVectors(targetPoint, startPos);
+                // Add spray cone spread
+                vel.add(new THREE.Vector3(
+                    (Math.random()-0.5)*3,
+                    (Math.random()-0.5)*3,
+                    (Math.random()-0.5)*3
+                ));
+                vel.normalize().multiplyScalar(20 + Math.random()*10); // speed
+                
+                this.waterVelocities[i].copy(vel);
+                lifetimes[i] = 1.0; // 1 second life
+                
+                spawned++;
+                if (spawned >= 3) break; // spawn 3 particles per frame
+            }
+        }
+    }
+
+    async loadRoom(roomId) {
         try {
             const response = await fetch('assets/data/content.json');
             if (!response.ok) throw new Error('Network response was not ok');
@@ -351,6 +467,31 @@ class WalkthroughEngine {
             this.particles.rotation.y += 0.0005;
         }
 
+        // Update Water Particles
+        if (this.waterParticles) {
+            const positions = this.waterParticles.geometry.attributes.position.array;
+            const lifetimes = this.waterParticles.geometry.attributes.lifetime.array;
+            let needsUpdate = false;
+            for(let i=0; i<lifetimes.length; i++) {
+                if (lifetimes[i] > 0) {
+                    lifetimes[i] -= 0.016;
+                    const vel = this.waterVelocities[i];
+                    vel.y -= 9.8 * 0.016; // gravity affects water
+                    positions[i*3] += vel.x * 0.016;
+                    positions[i*3+1] += vel.y * 0.016;
+                    positions[i*3+2] += vel.z * 0.016;
+                    needsUpdate = true;
+                } else if (positions[i*3+1] !== -100) {
+                    // Hide
+                    positions[i*3+1] = -100;
+                    needsUpdate = true;
+                }
+            }
+            if (needsUpdate) {
+                this.waterParticles.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+
         // Raycasting Logic
         if (this.interactables.length > 0 && this.itemModal.classList.contains('hidden')) {
             this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -381,14 +522,33 @@ class WalkthroughEngine {
                             const ctx = targetCanvas.ctx;
                             const tex = targetCanvas.texture;
                             
-                            let radius = 15; 
-                            if (this.activeTool === 'washer') radius = 35; // Bigger cleaning area for washer
+                            const x = uv.x * 256;
+                            const y = (1 - uv.y) * 256;
                             
-                            // Erase the canvas (making it transparent)
-                            ctx.globalCompositeOperation = 'destination-out';
-                            ctx.beginPath();
-                            ctx.arc(uv.x * 256, (1 - uv.y) * 256, radius, 0, Math.PI * 2);
-                            ctx.fill();
+                            if (this.activeTool === 'washer') {
+                                // Washer: Soft Erasure (Radial Gradient)
+                                const radius = 35;
+                                const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                                gradient.addColorStop(0, 'rgba(0,0,0,0.5)'); // Fade dirt slightly per frame
+                                gradient.addColorStop(1, 'rgba(0,0,0,0)'); // Soft edge
+                                
+                                ctx.globalCompositeOperation = 'destination-out';
+                                ctx.beginPath();
+                                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                                ctx.fillStyle = gradient;
+                                ctx.fill();
+                                
+                                // Shoot water!
+                                this.emitWaterParticles(this.currentIntersect.point);
+                                
+                            } else if (this.activeTool === 'brush') {
+                                // Brush: Paint UNDER dirt (destination-over)
+                                ctx.globalCompositeOperation = 'destination-over';
+                                ctx.beginPath();
+                                ctx.arc(x, y, this.paintSize, 0, Math.PI * 2);
+                                ctx.fillStyle = this.paintColor;
+                                ctx.fill();
+                            }
                             
                             tex.needsUpdate = true;
                         }

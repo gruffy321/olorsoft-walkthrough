@@ -24,12 +24,28 @@
     <div id="uiLayer">
         <header id="portfolioTitle">Loading...</header>
         
-        <!-- Inventory Hotbar -->
-        <div id="inventoryUI">
-            <div class="inv-slot active" data-tool="hands">✋ Hands</div>
-            <div class="inv-slot" data-tool="brush">🖌️ Brush</div>
-            <div class="inv-slot" data-tool="washer">🔫 Washer</div>
+        <!-- Inventory UI -->
+    <div id="inventoryUI" class="glass-panel">
+        <div class="inv-slot active" data-tool="hands">✋ Hands</div>
+        <div class="inv-slot" data-tool="brush">🖌️ Brush</div>
+        <div class="inv-slot" data-tool="washer">🔫 Washer</div>
+    </div>
+
+    <!-- Paint Palette UI -->
+    <div id="paintPalette" class="glass-panel hidden">
+        <div class="palette-colors">
+            <div class="color-swatch active" style="background: #ef4444;" data-color="#ef4444"></div>
+            <div class="color-swatch" style="background: #3b82f6;" data-color="#3b82f6"></div>
+            <div class="color-swatch" style="background: #10b981;" data-color="#10b981"></div>
+            <div class="color-swatch" style="background: #f59e0b;" data-color="#f59e0b"></div>
+            <div class="color-swatch" style="background: #ffffff;" data-color="#ffffff"></div>
+            <div class="color-swatch" style="background: #000000;" data-color="#000000"></div>
         </div>
+        <div class="palette-size">
+            <label for="brushSize">Size</label>
+            <input type="range" id="brushSize" min="5" max="40" value="15">
+        </div>
+    </div>
         
         <!-- Crosshair for interaction -->
         <div id="crosshair" aria-hidden="true"></div>
