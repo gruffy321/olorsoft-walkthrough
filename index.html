@@ -6,9 +6,10 @@
     <title>Olorsoft Portfolio</title>
     <link rel="stylesheet" href="css/main.css">
     
-    <!-- Three.js and GLTFLoader via CDN (No Node.js dependencies) -->
+    <!-- Three.js, GLTFLoader, and Cannon-es (Physics) via CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"></script>
 </head>
 <body>
     <!-- Orientation lock overlay -->
@@ -22,6 +23,13 @@
     <!-- UI Overlay (Accessible Fallbacks & Controls will go here) -->
     <div id="uiLayer">
         <header id="portfolioTitle">Loading...</header>
+        
+        <!-- Inventory Hotbar -->
+        <div id="inventoryUI">
+            <div class="inv-slot active" data-tool="hands">✋ Hands</div>
+            <div class="inv-slot" data-tool="brush">🖌️ Brush</div>
+            <div class="inv-slot" data-tool="washer">🔫 Washer</div>
+        </div>
         
         <!-- Crosshair for interaction -->
         <div id="crosshair" aria-hidden="true"></div>

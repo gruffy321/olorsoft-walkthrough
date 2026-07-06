@@ -47,6 +47,22 @@ class WalkthroughEngine {
         this.mouse = new THREE.Vector2(0, 0); // Always center for crosshair
         this.hoveredItem = null;
 
+        // Physics World (Cannon-es)
+        this.world = new CANNON.World({
+            gravity: new CANNON.Vec3(0, -30.0, 0), // match our snappy jump gravity
+        });
+        // Static ground plane
+        const groundBody = new CANNON.Body({
+            type: CANNON.Body.STATIC,
+            shape: new CANNON.Plane(),
+        });
+        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // face up
+        this.world.addBody(groundBody);
+
+        // Inventory System
+        this.activeTool = 'hands';
+        this.initInventory();
+
         // UI Elements
         this.crosshair = document.getElementById('crosshair');
         this.itemModal = document.getElementById('itemModal');
@@ -88,6 +104,17 @@ class WalkthroughEngine {
 
         // Start render loop
         this.animate();
+    }
+
+    initInventory() {
+        const slots = document.querySelectorAll('.inv-slot');
+        slots.forEach(slot => {
+            slot.addEventListener('click', (e) => {
+                slots.forEach(s => s.classList.remove('active'));
+                e.target.classList.add('active');
+                this.activeTool = e.target.dataset.tool;
+            });
+        });
     }
 
     initParticles() {
@@ -176,14 +203,22 @@ class WalkthroughEngine {
                 });
                 
                 const mesh = new THREE.Mesh(geometry, material);
-                if (item.position) {
-                    mesh.position.set(item.position[0], item.position[1] + 0.75, item.position[2]);
-                } else {
-                    mesh.position.set(Math.random()*10 - 5, 0.75, Math.random()*10 - 5);
-                }
+                
+                // Drop them from the sky for dramatic effect
+                mesh.position.set(
+                    item.position ? item.position[0] : (Math.random()*10 - 5), 
+                    5.0, 
+                    item.position ? item.position[2] : (Math.random()*10 - 5)
+                );
+                
+                // Add Physics Body
+                const shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.75, 0.5)); // half extents
+                const body = new CANNON.Body({ mass: 5, shape: shape });
+                body.position.set(mesh.position.x, mesh.position.y, mesh.position.z);
+                this.world.addBody(body);
                 
                 // Store metadata for raycasting
-                mesh.userData = item;
+                mesh.userData = { ...item, physicsBody: body };
                 
                 this.scene.add(mesh);
                 this.interactables.push(mesh);
@@ -193,19 +228,34 @@ class WalkthroughEngine {
 
     onClick() {
         if (this.hoveredItem && this.itemModal.classList.contains('hidden')) {
-            // Unlock pointer to allow interacting with the modal
-            if (document.pointerLockElement) {
-                document.exitPointerLock();
+            if (this.activeTool === 'hands') {
+                // Slap the object! (Apply Physics Impulse)
+                if (this.hoveredItem.userData.physicsBody) {
+                    const dir = this.raycaster.ray.direction;
+                    // Apply impulse forward and slightly up
+                    const force = new CANNON.Vec3(dir.x * 100, dir.y * 100 + 50, dir.z * 100);
+                    this.hoveredItem.userData.physicsBody.applyImpulse(force, new CANNON.Vec3(0,0,0));
+                }
+                
+                // Unlock pointer to allow interacting with the modal
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                }
+                
+                // Populate Modal
+                const data = this.hoveredItem.userData;
+                this.modalTitle.innerText = this.sanitize(data.title);
+                this.modalDesc.innerText = this.sanitize(data.description);
+                this.modalLink.href = data.link || '#';
+                
+                // Show Modal
+                this.itemModal.classList.remove('hidden');
+            } else {
+                // Cleaning tool equipped
+                console.log("Cleaning item with " + this.activeTool);
+                // Placeholder: change color wildly
+                this.hoveredItem.material.color.setHex(Math.random() * 0xffffff);
             }
-            
-            // Populate Modal
-            const data = this.hoveredItem.userData;
-            this.modalTitle.innerText = this.sanitize(data.title);
-            this.modalDesc.innerText = this.sanitize(data.description);
-            this.modalLink.href = data.link || '#';
-            
-            // Show Modal
-            this.itemModal.classList.remove('hidden');
         }
     }
 
@@ -218,6 +268,17 @@ class WalkthroughEngine {
     animate() {
         requestAnimationFrame(this.animate.bind(this));
         
+        // Step Physics World
+        if (this.world) {
+            this.world.step(1/60, 0.016, 3);
+            this.interactables.forEach(mesh => {
+                if(mesh.userData.physicsBody) {
+                    mesh.position.copy(mesh.userData.physicsBody.position);
+                    mesh.quaternion.copy(mesh.userData.physicsBody.quaternion);
+                }
+            });
+        }
+
         // Rotate particles slowly
         if(this.particles) {
             this.particles.rotation.y += 0.0005;
