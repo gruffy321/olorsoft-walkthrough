@@ -1,0 +1,88 @@
+/* CSS Variables for Accessibility Toggles */
+:root {
+    --bg-color: #000;
+    --text-color: #fff;
+    --font-family: 'Arial', sans-serif;
+    --high-contrast: false;
+}
+
+body.high-contrast {
+    --bg-color: #000;
+    --text-color: #ffff00;
+}
+
+body.dyslexic-font {
+    /* We would load OpenDyslexic via @font-face here */
+    --font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+#canvasContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#uiLayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none; /* Let clicks pass through to 3D canvas by default */
+}
+
+#portfolioTitle {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    pointer-events: auto; /* Block clicks */
+}
+
+.overlay .message h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+/* Orientation Lock */
+#orientationLock {
+    display: none;
+}
+
+/* If device is in portrait mode and screen width is small (mobile), show the orientation lock */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+    #orientationLock {
+        display: flex;
+    }
+}

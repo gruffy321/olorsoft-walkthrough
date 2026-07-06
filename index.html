@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Olorsoft Portfolio</title>
+    <link rel="stylesheet" href="css/main.css">
+    
+    <!-- Three.js and GLTFLoader via CDN (No Node.js dependencies) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+    <!-- Orientation lock overlay -->
+    <div id="orientationLock" class="overlay" aria-hidden="true">
+        <div class="message">
+            <h1>Please Rotate Your Device</h1>
+            <p>For the best experience, switch to landscape mode.</p>
+        </div>
+    </div>
+
+    <!-- UI Overlay (Accessible Fallbacks & Controls will go here) -->
+    <div id="uiLayer">
+        <header id="portfolioTitle">Loading...</header>
+        <div id="loadingScreen" class="overlay">
+            <h1>Loading Experience...</h1>
+        </div>
+    </div>
+
+    <!-- 3D Canvas Container -->
+    <div id="canvasContainer" aria-hidden="true"></div>
+
+    <script src="js/engine.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>
