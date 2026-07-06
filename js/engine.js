@@ -47,10 +47,9 @@ class WalkthroughEngine {
         this.mouse = new THREE.Vector2(0, 0); // Always center for crosshair
         this.hoveredItem = null;
 
-        // Physics World (Cannon-es)
-        this.world = new CANNON.World({
-            gravity: new CANNON.Vec3(0, -30.0, 0), // match our snappy jump gravity
-        });
+        // Physics World (Cannon.js 0.6.2)
+        this.world = new CANNON.World();
+        this.world.gravity.set(0, -30.0, 0); // match our snappy jump gravity
         // Static ground plane
         const groundBody = new CANNON.Body({
             type: CANNON.Body.STATIC,
