@@ -17,20 +17,29 @@ class WalkthroughControls {
         this.moveLeft = false;
         this.moveRight = false;
         
+        // Physics & Jumping
         this.velocity = new THREE.Vector3();
         this.direction = new THREE.Vector3();
         this.speed = 4.0;
+        this.canJump = false;
+        this.mass = 100.0;
         
-        // Touch State
-        this.isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        // Mobile State
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         this.init();
     }
 
     init() {
-        if (!this.isTouch) {
-            this.initDesktopControls();
-        } else {
+        if (this.isMobile) {
+            document.body.classList.add('is-mobile');
+        }
+
+        // Always initialize desktop controls (WASD)
+        this.initDesktopControls();
+
+        // Initialize touch controls if mobile
+        if (this.isMobile) {
             this.initTouchControls();
         }
         
@@ -41,13 +50,11 @@ class WalkthroughControls {
             this.engine.renderer.render(this.engine.scene, this.camera);
             requestAnimationFrame(this.engine.animate);
         };
-        // Restart animation with hook
         this.engine.animate();
     }
 
     initDesktopControls() {
         document.addEventListener('click', (e) => {
-            // Prevent locking if interacting with a modal or if click came from a button
             if (e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'a') return;
             if (window.AppEngine && !window.AppEngine.itemModal.classList.contains('hidden')) return;
             document.body.requestPointerLock();
@@ -68,8 +75,6 @@ class WalkthroughControls {
 
             euler.y -= movementX * 0.002;
             euler.x -= movementY * 0.002;
-            
-            // Limit looking up and down
             euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
 
             this.camera.quaternion.setFromEuler(euler);
@@ -97,37 +102,45 @@ class WalkthroughControls {
             case 'KeyD':
                 this.moveRight = isDown;
                 break;
+            case 'Space':
+                if (isDown && this.canJump) {
+                    this.velocity.y += 10.0;
+                    this.canJump = false;
+                }
+                break;
         }
     }
 
     initTouchControls() {
-        // Simple invisible overlay zones for left (move) and right (look)
-        const touchZoneL = document.createElement('div');
-        touchZoneL.style.cssText = 'position:absolute; top:0; left:0; width:50%; height:100%; z-index:20; touch-action:none;';
+        // UI Buttons
+        const btnForward = document.getElementById('btnForward');
+        const btnBackward = document.getElementById('btnBackward');
+        const btnJump = document.getElementById('btnJump');
+
+        // Movement handlers
+        btnForward.addEventListener('touchstart', (e) => { e.preventDefault(); this.moveForward = true; }, {passive: false});
+        btnForward.addEventListener('touchend', (e) => { e.preventDefault(); this.moveForward = false; });
         
-        const touchZoneR = document.createElement('div');
-        touchZoneR.style.cssText = 'position:absolute; top:0; right:0; width:50%; height:100%; z-index:20; touch-action:none;';
+        btnBackward.addEventListener('touchstart', (e) => { e.preventDefault(); this.moveBackward = true; }, {passive: false});
+        btnBackward.addEventListener('touchend', (e) => { e.preventDefault(); this.moveBackward = false; });
 
-        document.body.appendChild(touchZoneL);
-        document.body.appendChild(touchZoneR);
-
-        // Movement (Left side)
-        let startTouchL = null;
-        touchZoneL.addEventListener('touchstart', (e) => {
-            startTouchL = e.changedTouches[0];
-            this.moveForward = true; // basic tap to move forward for prototype
-        });
-        touchZoneL.addEventListener('touchmove', (e) => {
-            // Calculate delta and set movement direction
-        });
-        touchZoneL.addEventListener('touchend', () => {
-            startTouchL = null;
-            this.moveForward = false;
-        });
+        btnJump.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (this.canJump) {
+                this.velocity.y += 10.0;
+                this.canJump = false;
+            }
+        }, {passive: false});
 
         // Look (Right side)
+        const touchZoneR = document.createElement('div');
+        touchZoneR.style.cssText = 'position:absolute; top:0; right:0; width:50%; height:100%; z-index:10; touch-action:none;';
+        document.body.appendChild(touchZoneR);
+
         let lastTouchR = null;
         touchZoneR.addEventListener('touchstart', (e) => {
+            // Ignore if they tapped the jump/interact buttons
+            if(e.target.tagName.toLowerCase() === 'button') return;
             lastTouchR = { x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY };
         });
         touchZoneR.addEventListener('touchmove', (e) => {
@@ -157,22 +170,31 @@ class WalkthroughControls {
         
         this.velocity.x -= this.velocity.x * 10.0 * delta;
         this.velocity.z -= this.velocity.z * 10.0 * delta;
+        
+        // Gravity
+        this.velocity.y -= 9.8 * this.mass * delta;
 
         this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
         this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
-        this.direction.normalize(); // consistent speed in all directions
+        this.direction.normalize(); 
 
         if (this.moveForward || this.moveBackward) this.velocity.z -= this.direction.z * 40.0 * delta;
         if (this.moveLeft || this.moveRight) this.velocity.x -= this.direction.x * 40.0 * delta;
 
         this.camera.translateX(this.velocity.x * delta);
+        this.camera.translateY(this.velocity.y * delta);
         this.camera.translateZ(this.velocity.z * delta);
+
+        // Ground Check
+        if (this.camera.position.y < 1.6) {
+            this.velocity.y = 0;
+            this.camera.position.y = 1.6;
+            this.canJump = true;
+        }
     }
 }
 
-// Hook it into the engine
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait for engine to initialize slightly
     setTimeout(() => {
         if(window.AppEngine) {
             window.AppControls = new WalkthroughControls(window.AppEngine);

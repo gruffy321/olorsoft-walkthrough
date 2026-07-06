@@ -26,6 +26,18 @@
         <!-- Crosshair for interaction -->
         <div id="crosshair" aria-hidden="true"></div>
 
+        <!-- Mobile Controls (Hidden on Desktop) -->
+        <div id="mobileControls" class="mobile-only" aria-hidden="true">
+            <div id="mobileLeftCol">
+                <button id="btnForward" class="glass-btn icon-btn" title="Move Forward">W</button>
+                <button id="btnBackward" class="glass-btn icon-btn" title="Move Backward">S</button>
+            </div>
+            <div id="mobileRightCol">
+                <button id="btnJump" class="glass-btn icon-btn" title="Jump">JUMP</button>
+                <button id="btnInteract" class="glass-btn icon-btn" title="Interact">ACT</button>
+            </div>
+        </div>
+
         <!-- Portfolio Item Modal (Glassmorphism) -->
         <div id="itemModal" class="glass-modal hidden" aria-hidden="true" role="dialog">
             <h2 id="modalTitle">Project Title</h2>

@@ -69,6 +69,15 @@ class WalkthroughEngine {
         
         // Handle Clicks for Interaction
         document.addEventListener('click', this.onClick.bind(this));
+        
+        // Mobile Interact Button
+        const btnInteract = document.getElementById('btnInteract');
+        if (btnInteract) {
+            btnInteract.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.onClick();
+            }, {passive: false});
+        }
 
         // Start render loop
         this.animate();
