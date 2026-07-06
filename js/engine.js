@@ -104,6 +104,13 @@ class WalkthroughEngine {
 
         // Start render loop
         this.animate();
+
+        // Track Mouse Down for continuous cleaning
+        this.isMouseDown = false;
+        document.addEventListener('mousedown', () => this.isMouseDown = true);
+        document.addEventListener('mouseup', () => this.isMouseDown = false);
+        document.addEventListener('touchstart', () => this.isMouseDown = true, {passive: true});
+        document.addEventListener('touchend', () => this.isMouseDown = false);
     }
 
     initInventory() {
@@ -220,8 +227,33 @@ class WalkthroughEngine {
                 // Store metadata for raycasting
                 mesh.userData = { ...item, physicsBody: body };
                 
+                // --- Dirt Mesh for Cleaning Mechanic ---
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#4a4036'; // Dirt color
+                ctx.fillRect(0, 0, 512, 512);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const dirtMaterial = new THREE.MeshBasicMaterial({ 
+                    map: texture, 
+                    transparent: true, 
+                    opacity: 1.0,
+                    depthWrite: false
+                });
+                
+                // Slightly larger mesh to wrap the original
+                const dirtMesh = new THREE.Mesh(geometry.clone(), dirtMaterial);
+                dirtMesh.scale.set(1.02, 1.02, 1.02);
+                
+                // Attach the canvas context to userData for raycasting later
+                dirtMesh.userData = { isDirt: true, ctx: ctx, texture: texture, parentItem: mesh };
+                mesh.add(dirtMesh); // Add dirt as child of the interactive mesh
+                
                 this.scene.add(mesh);
                 this.interactables.push(mesh);
+                this.interactables.push(dirtMesh); // Add dirt to raycast pool
             });
         }
     }
@@ -229,12 +261,14 @@ class WalkthroughEngine {
     onClick() {
         if (this.hoveredItem && this.itemModal.classList.contains('hidden')) {
             if (this.activeTool === 'hands') {
+                const targetObj = this.hoveredItem.userData.isDirt ? this.hoveredItem.userData.parentItem : this.hoveredItem;
+                
                 // Slap the object! (Apply Physics Impulse)
-                if (this.hoveredItem.userData.physicsBody) {
+                if (targetObj.userData.physicsBody) {
                     const dir = this.raycaster.ray.direction;
                     // Apply impulse forward and slightly up
                     const force = new CANNON.Vec3(dir.x * 100, dir.y * 100 + 50, dir.z * 100);
-                    this.hoveredItem.userData.physicsBody.applyImpulse(force, new CANNON.Vec3(0,0,0));
+                    targetObj.userData.physicsBody.applyImpulse(force, new CANNON.Vec3(0,0,0));
                 }
                 
                 // Unlock pointer to allow interacting with the modal
@@ -243,18 +277,13 @@ class WalkthroughEngine {
                 }
                 
                 // Populate Modal
-                const data = this.hoveredItem.userData;
+                const data = targetObj.userData;
                 this.modalTitle.innerText = this.sanitize(data.title);
                 this.modalDesc.innerText = this.sanitize(data.description);
                 this.modalLink.href = data.link || '#';
                 
                 // Show Modal
                 this.itemModal.classList.remove('hidden');
-            } else {
-                // Cleaning tool equipped
-                console.log("Cleaning item with " + this.activeTool);
-                // Placeholder: change color wildly
-                this.hoveredItem.material.color.setHex(Math.random() * 0xffffff);
             }
         }
     }
@@ -287,19 +316,43 @@ class WalkthroughEngine {
         // Raycasting Logic
         if (this.interactables.length > 0 && this.itemModal.classList.contains('hidden')) {
             this.raycaster.setFromCamera(this.mouse, this.camera);
-            const intersects = this.raycaster.intersectObjects(this.interactables);
+            const intersects = this.raycaster.intersectObjects(this.interactables, true);
             
             if (intersects.length > 0) {
-                if (this.hoveredItem !== intersects[0].object) {
-                    if (this.hoveredItem) this.hoveredItem.material.emissiveIntensity = 0.5; // Reset old
-                    this.hoveredItem = intersects[0].object;
-                    this.hoveredItem.material.emissiveIntensity = 2.0; // Highlight new
+                this.currentIntersect = intersects[0];
+                
+                if (this.hoveredItem !== this.currentIntersect.object) {
+                    if (this.hoveredItem && !this.hoveredItem.userData.isDirt) this.hoveredItem.material.emissiveIntensity = 0.5; // Reset old
+                    this.hoveredItem = this.currentIntersect.object;
+                    if (!this.hoveredItem.userData.isDirt) this.hoveredItem.material.emissiveIntensity = 2.0; // Highlight new
                     this.crosshair.classList.add('active');
                 }
+                
+                // CONTINUOUS CLEANING LOGIC
+                if (this.isMouseDown && this.hoveredItem.userData.isDirt && this.activeTool !== 'hands') {
+                    const uv = this.currentIntersect.uv;
+                    if (uv) {
+                        const ctx = this.hoveredItem.userData.ctx;
+                        const tex = this.hoveredItem.userData.texture;
+                        
+                        let radius = 20; 
+                        if (this.activeTool === 'washer') radius = 50; // Bigger cleaning area for washer
+                        
+                        // Erase the canvas (making it transparent)
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.beginPath();
+                        ctx.arc(uv.x * 512, (1 - uv.y) * 512, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        tex.needsUpdate = true;
+                    }
+                }
+                
             } else {
                 if (this.hoveredItem) {
-                    this.hoveredItem.material.emissiveIntensity = 0.5;
+                    if (!this.hoveredItem.userData.isDirt) this.hoveredItem.material.emissiveIntensity = 0.5;
                     this.hoveredItem = null;
+                    this.currentIntersect = null;
                     this.crosshair.classList.remove('active');
                 }
             }
