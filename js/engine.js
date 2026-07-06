@@ -581,7 +581,7 @@ class WalkthroughEngine {
                                 
                             } else if (this.activeTool === 'brush') {
                                 // Brush: Paint ON the dedicated paint mesh (source-over so new strokes overlap old ones)
-                                const paintData = this.currentIntersect.object.userData.paintCanvases[faceIndex];
+                                const paintData = this.currentIntersect.object.userData.paintCanvases[matIndex];
                                 const pCtx = paintData.ctx;
                                 const pTex = paintData.texture;
                                 
