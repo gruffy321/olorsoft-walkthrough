@@ -249,8 +249,10 @@ body, html {
     position: absolute;
     bottom: 30px;
     left: 20px;
+    right: 20px;
     display: flex;
-    gap: 15px;
+    justify-content: space-between;
+    align-items: flex-end;
     z-index: 100;
 }
 #mobileControls.hidden {
@@ -261,6 +263,13 @@ body, html {
     flex-direction: column;
     align-items: center;
     gap: 10px;
+    pointer-events: auto;
+}
+#joystick-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
     pointer-events: auto;
 }
 .strafe-row {
