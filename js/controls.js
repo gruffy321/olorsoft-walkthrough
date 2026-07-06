@@ -43,14 +43,8 @@ class WalkthroughControls {
             this.initTouchControls();
         }
         
-        // Hook into engine's render loop
-        const originalAnimate = this.engine.animate.bind(this.engine);
-        this.engine.animate = () => {
-            this.update();
-            this.engine.renderer.render(this.engine.scene, this.camera);
-            requestAnimationFrame(this.engine.animate);
-        };
-        this.engine.animate();
+        // We no longer hijack engine.animate here. 
+        // engine.js will call AppControls.update() in its own loop.
     }
 
     initDesktopControls() {

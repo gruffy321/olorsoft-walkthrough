@@ -56,8 +56,28 @@ class WalkthroughEngine {
             type: CANNON.Body.STATIC,
             shape: new CANNON.Plane(),
         });
-        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // face up
+        // Cannon.js 0.6.2 uses setFromAxisAngle, not setFromEuler
+        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2); // face up
         this.world.addBody(groundBody);
+
+        // Invisible Walls to keep cubes on the grid (Grid is 50x50, so -25 to 25)
+        const wallShape = new CANNON.Box(new CANNON.Vec3(25, 20, 1)); // 25 width, 20 height, 1 depth
+        const wallN = new CANNON.Body({ type: CANNON.Body.STATIC, shape: wallShape });
+        wallN.position.set(0, 10, -25);
+        this.world.addBody(wallN);
+
+        const wallS = new CANNON.Body({ type: CANNON.Body.STATIC, shape: wallShape });
+        wallS.position.set(0, 10, 25);
+        this.world.addBody(wallS);
+
+        const wallShapeSide = new CANNON.Box(new CANNON.Vec3(1, 20, 25));
+        const wallE = new CANNON.Body({ type: CANNON.Body.STATIC, shape: wallShapeSide });
+        wallE.position.set(25, 10, 0);
+        this.world.addBody(wallE);
+
+        const wallW = new CANNON.Body({ type: CANNON.Body.STATIC, shape: wallShapeSide });
+        wallW.position.set(-25, 10, 0);
+        this.world.addBody(wallW);
 
         // Inventory System
         this.activeTool = 'hands';
@@ -70,12 +90,14 @@ class WalkthroughEngine {
         this.modalDesc = document.getElementById('modalDesc');
         this.modalLink = document.getElementById('modalLink');
         
-        document.getElementById('closeModalBtn').addEventListener('click', () => {
-            this.itemModal.classList.add('hidden');
-            if (window.AppControls && window.AppControls.isDesktop) {
-                document.body.requestPointerLock();
-            }
-        });
+        const btnClose = document.getElementById('btnCloseModal');
+        if (btnClose) {
+            btnClose.addEventListener('click', () => {
+                this.itemModal.classList.add('hidden');
+                // Optional: request pointer lock back when closing modal
+                // document.body.requestPointerLock();
+            });
+        }
 
         // Add Environment Particles
         this.initParticles();
@@ -227,28 +249,35 @@ class WalkthroughEngine {
                 // Store metadata for raycasting
                 mesh.userData = { ...item, physicsBody: body };
                 
-                // --- Dirt Mesh for Cleaning Mechanic ---
-                const canvas = document.createElement('canvas');
-                canvas.width = 512;
-                canvas.height = 512;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#4a4036'; // Dirt color
-                ctx.fillRect(0, 0, 512, 512);
+                // --- Dirt Mesh for Cleaning Mechanic (6 independent faces) ---
+                const dirtMaterials = [];
+                const canvases = [];
+                
+                for (let i = 0; i < 6; i++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256; // Optimization for 6 faces
+                    canvas.height = 256;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#4a4036'; // Dirt color
+                    ctx.fillRect(0, 0, 256, 256);
 
-                const texture = new THREE.CanvasTexture(canvas);
-                const dirtMaterial = new THREE.MeshBasicMaterial({ 
-                    map: texture, 
-                    transparent: true, 
-                    opacity: 1.0,
-                    depthWrite: false
-                });
+                    const texture = new THREE.CanvasTexture(canvas);
+                    canvases.push({ ctx, texture });
+
+                    dirtMaterials.push(new THREE.MeshBasicMaterial({ 
+                        map: texture, 
+                        transparent: true, 
+                        opacity: 1.0,
+                        depthWrite: false
+                    }));
+                }
                 
                 // Slightly larger mesh to wrap the original
-                const dirtMesh = new THREE.Mesh(geometry.clone(), dirtMaterial);
+                const dirtMesh = new THREE.Mesh(geometry.clone(), dirtMaterials);
                 dirtMesh.scale.set(1.02, 1.02, 1.02);
                 
-                // Attach the canvas context to userData for raycasting later
-                dirtMesh.userData = { isDirt: true, ctx: ctx, texture: texture, parentItem: mesh };
+                // Attach the canvas contexts to userData for raycasting later
+                dirtMesh.userData = { isDirt: true, canvases: canvases, parentItem: mesh };
                 mesh.add(dirtMesh); // Add dirt as child of the interactive mesh
                 
                 this.scene.add(mesh);
@@ -266,8 +295,8 @@ class WalkthroughEngine {
                 // Slap the object! (Apply Physics Impulse)
                 if (targetObj.userData.physicsBody) {
                     const dir = this.raycaster.ray.direction;
-                    // Apply impulse forward and slightly up
-                    const force = new CANNON.Vec3(dir.x * 100, dir.y * 100 + 50, dir.z * 100);
+                    // Apply a softer impulse forward and slightly up so it stays on grid
+                    const force = new CANNON.Vec3(dir.x * 50, 20, dir.z * 50);
                     targetObj.userData.physicsBody.applyImpulse(force, new CANNON.Vec3(0,0,0));
                 }
                 
@@ -296,6 +325,11 @@ class WalkthroughEngine {
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
+        
+        // Update Player Controls
+        if (window.AppControls) {
+            window.AppControls.update();
+        }
         
         // Step Physics World
         if (this.world) {
@@ -331,20 +365,29 @@ class WalkthroughEngine {
                 // CONTINUOUS CLEANING LOGIC
                 if (this.isMouseDown && this.hoveredItem.userData.isDirt && this.activeTool !== 'hands') {
                     const uv = this.currentIntersect.uv;
-                    if (uv) {
-                        const ctx = this.hoveredItem.userData.ctx;
-                        const tex = this.hoveredItem.userData.texture;
-                        
-                        let radius = 20; 
-                        if (this.activeTool === 'washer') radius = 50; // Bigger cleaning area for washer
-                        
-                        // Erase the canvas (making it transparent)
-                        ctx.globalCompositeOperation = 'destination-out';
-                        ctx.beginPath();
-                        ctx.arc(uv.x * 512, (1 - uv.y) * 512, radius, 0, Math.PI * 2);
-                        ctx.fill();
-                        
-                        tex.needsUpdate = true;
+                    
+                    if (uv && this.currentIntersect.face) {
+                        // Get the exact material face index (0 to 5)
+                        const matIndex = this.currentIntersect.face.materialIndex !== undefined ? 
+                            this.currentIntersect.face.materialIndex : 
+                            Math.floor(this.currentIntersect.faceIndex / 2);
+                            
+                        const targetCanvas = this.hoveredItem.userData.canvases[matIndex];
+                        if (targetCanvas) {
+                            const ctx = targetCanvas.ctx;
+                            const tex = targetCanvas.texture;
+                            
+                            let radius = 15; 
+                            if (this.activeTool === 'washer') radius = 35; // Bigger cleaning area for washer
+                            
+                            // Erase the canvas (making it transparent)
+                            ctx.globalCompositeOperation = 'destination-out';
+                            ctx.beginPath();
+                            ctx.arc(uv.x * 256, (1 - uv.y) * 256, radius, 0, Math.PI * 2);
+                            ctx.fill();
+                            
+                            tex.needsUpdate = true;
+                        }
                     }
                 }
                 
