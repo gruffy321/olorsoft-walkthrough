@@ -22,8 +22,20 @@
     <!-- UI Overlay (Accessible Fallbacks & Controls will go here) -->
     <div id="uiLayer">
         <header id="portfolioTitle">Loading...</header>
+        
+        <!-- Crosshair for interaction -->
+        <div id="crosshair" aria-hidden="true"></div>
+
+        <!-- Portfolio Item Modal (Glassmorphism) -->
+        <div id="itemModal" class="glass-modal hidden" aria-hidden="true" role="dialog">
+            <h2 id="modalTitle">Project Title</h2>
+            <p id="modalDesc">Project Description</p>
+            <a id="modalLink" href="#" target="_blank" class="glass-btn">View Project</a>
+            <button id="closeModalBtn" class="glass-btn outline">Close</button>
+        </div>
+
         <div id="loadingScreen" class="overlay">
-            <h1>Loading Experience...</h1>
+            <h1 class="glow-text">Initializing Experience...</h1>
         </div>
     </div>
 

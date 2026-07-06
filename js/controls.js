@@ -46,7 +46,10 @@ class WalkthroughControls {
     }
 
     initDesktopControls() {
-        document.addEventListener('click', () => {
+        document.addEventListener('click', (e) => {
+            // Prevent locking if interacting with a modal or if click came from a button
+            if (e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'a') return;
+            if (window.AppEngine && !window.AppEngine.itemModal.classList.contains('hidden')) return;
             document.body.requestPointerLock();
         });
 

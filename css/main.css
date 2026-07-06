@@ -1,18 +1,22 @@
-/* CSS Variables for Accessibility Toggles */
+/* CSS Variables for Accessibility & Aesthetics */
 :root {
-    --bg-color: #000;
-    --text-color: #fff;
-    --font-family: 'Arial', sans-serif;
-    --high-contrast: false;
+    --bg-color: #0d0d12;
+    --text-color: #e2e8f0;
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --accent-color: #3b82f6;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 body.high-contrast {
     --bg-color: #000;
     --text-color: #ffff00;
+    --accent-color: #ffff00;
+    --glass-bg: #000;
+    --glass-border: #ffff00;
 }
 
 body.dyslexic-font {
-    /* We would load OpenDyslexic via @font-face here */
     --font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;
 }
 
@@ -43,44 +47,138 @@ body, html {
     width: 100%;
     height: 100%;
     z-index: 10;
-    pointer-events: none; /* Let clicks pass through to 3D canvas by default */
+    pointer-events: none;
 }
 
 #portfolioTitle {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    top: 30px;
+    left: 30px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    background: linear-gradient(90deg, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
+/* Crosshair */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: difference;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+#crosshair.active {
+    transform: translate(-50%, -50%) scale(2);
+    background: var(--accent-color);
+}
+
+/* Glassmorphism Modal */
+.glass-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    pointer-events: auto;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    min-width: 300px;
+}
+.glass-modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -45%);
+}
+
+.glass-modal h2 {
+    margin-top: 0;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+.glass-modal p {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    margin-bottom: 30px;
+}
+
+.glass-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--accent-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.1s ease;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+}
+.glass-btn:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+}
+.glass-btn.outline {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: #fff;
+    margin-left: 10px;
+}
+.glass-btn.outline:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* Loading Screen */
 .overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: #0d0d12;
     z-index: 100;
     display: flex;
     justify-content: center;
     align-items: center;
-    text-align: center;
-    pointer-events: auto; /* Block clicks */
+    pointer-events: auto;
+    transition: opacity 0.5s ease;
 }
-
-.overlay .message h1 {
+.glow-text {
     font-size: 2em;
-    margin-bottom: 10px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    animation: pulse 2s infinite ease-in-out;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; text-shadow: 0 0 20px var(--accent-color); }
 }
 
 /* Orientation Lock */
 #orientationLock {
     display: none;
+    background: rgba(13, 13, 18, 0.95);
+    backdrop-filter: blur(10px);
 }
-
-/* If device is in portrait mode and screen width is small (mobile), show the orientation lock */
 @media screen and (max-width: 768px) and (orientation: portrait) {
     #orientationLock {
         display: flex;
