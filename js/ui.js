@@ -12,9 +12,9 @@ class UIManager {
     }
 
     initToggles() {
-        // Create an accessible menu for toggles
+        // Create an accessible menu for toggles (Moved to top right and scaled down)
         const menu = document.createElement('div');
-        menu.style.cssText = 'position:absolute; bottom:20px; right:20px; z-index:30; pointer-events:auto; display:flex; flex-direction:column; gap:10px; background:rgba(0,0,0,0.7); padding:10px; border-radius:8px;';
+        menu.style.cssText = 'position:absolute; top:20px; right:20px; z-index:30; pointer-events:auto; display:flex; flex-direction:column; gap:8px; background:rgba(0,0,0,0.7); padding:10px; border-radius:8px; transform:scale(0.85); transform-origin:top right;';
         
         // High Contrast Toggle
         const hcBtn = document.createElement('button');

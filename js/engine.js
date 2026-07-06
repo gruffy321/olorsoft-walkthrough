@@ -70,6 +70,13 @@ class WalkthroughEngine {
         // Handle Clicks for Interaction
         document.addEventListener('click', this.onClick.bind(this));
         
+        // Desktop Interact Key (E)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyE') {
+                this.onClick();
+            }
+        });
+        
         // Mobile Interact Button
         const btnInteract = document.getElementById('btnInteract');
         if (btnInteract) {

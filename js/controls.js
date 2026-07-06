@@ -171,19 +171,22 @@ class WalkthroughControls {
         this.velocity.x -= this.velocity.x * 10.0 * delta;
         this.velocity.z -= this.velocity.z * 10.0 * delta;
         
-        // Gravity
-        this.velocity.y -= 9.8 * this.mass * delta;
+        // Gravity (independent of mass for acceleration, slightly higher than 9.8 for a snappy game feel)
+        this.velocity.y -= 30.0 * delta;
 
         this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
-        this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
+        this.direction.x = Number(this.moveLeft) - Number(this.moveRight);
         this.direction.normalize(); 
 
         if (this.moveForward || this.moveBackward) this.velocity.z -= this.direction.z * 40.0 * delta;
         if (this.moveLeft || this.moveRight) this.velocity.x -= this.direction.x * 40.0 * delta;
 
+        // X and Z movement are local (so you walk in the direction you look)
         this.camera.translateX(this.velocity.x * delta);
-        this.camera.translateY(this.velocity.y * delta);
         this.camera.translateZ(this.velocity.z * delta);
+        
+        // Y movement (Gravity/Jumping) must be GLOBAL, not local!
+        this.camera.position.y += this.velocity.y * delta;
 
         // Ground Check
         if (this.camera.position.y < 1.6) {
