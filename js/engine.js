@@ -288,7 +288,7 @@ class WalkthroughEngine {
         }
     }
 
-    async loadRoom(roomId) {
+    async init() {
         try {
             const response = await fetch('assets/data/content.json');
             if (!response.ok) throw new Error('Network response was not ok');
