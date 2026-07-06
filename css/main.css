@@ -188,6 +188,7 @@ body, html {
     backdrop-filter: blur(8px);
     z-index: 10;
     transition: opacity 0.3s;
+    pointer-events: auto;
 }
 #paintPalette.hidden {
     opacity: 0;
