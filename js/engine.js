@@ -89,12 +89,16 @@ class WalkthroughEngine {
         this.modalDesc = document.getElementById('modalDesc');
         this.modalLink = document.getElementById('modalLink');
         
-        const btnClose = document.getElementById('btnCloseModal');
+        const btnClose = document.getElementById('closeModalBtn');
         if (btnClose) {
-            btnClose.addEventListener('click', () => {
+            btnClose.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent bubbling up to document and triggering pointer lock error
                 this.itemModal.classList.add('hidden');
-                // Optional: request pointer lock back when closing modal
-                // document.body.requestPointerLock();
+                
+                // Request pointer lock back when closing the modal so they can keep playing smoothly
+                if (window.AppControls && window.AppControls.isDesktop) {
+                    document.body.requestPointerLock();
+                }
             });
         }
 
