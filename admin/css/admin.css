@@ -1,0 +1,88 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+.admin-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.login-box, .dashboard {
+    width: 100%;
+}
+
+h2, h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.error {
+    color: #e74c3c;
+    background: #fceceb;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+input, textarea, button {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+    border: none;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.btn-logout {
+    text-decoration: none;
+    background: #e74c3c;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+}
+
+.btn-logout:hover {
+    background: #c0392b;
+}
+
+section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+textarea {
+    width: 100%;
+    font-family: monospace;
+}

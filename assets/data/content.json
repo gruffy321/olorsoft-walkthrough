@@ -1,0 +1,22 @@
+{
+  "settings": {
+    "title": "Olorsoft Portfolio",
+    "startRoom": "main_gallery"
+  },
+  "rooms": [
+    {
+      "id": "main_gallery",
+      "modelUrl": "assets/models/gallery.glb",
+      "description": "Welcome to Olorsoft. We build immersive web experiences.",
+      "items": [
+        {
+          "id": "project_1",
+          "position": [10, 0, -5],
+          "title": "Project Alpha",
+          "description": "A robust eCommerce solution.",
+          "link": "https://example.com"
+        }
+      ]
+    }
+  ]
+}
