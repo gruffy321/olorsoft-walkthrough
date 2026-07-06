@@ -181,6 +181,9 @@ class WalkthroughEngine {
                 swatches.forEach(s => s.classList.remove('active'));
                 e.currentTarget.classList.add('active');
                 this.paintColor = e.currentTarget.dataset.color;
+                
+                // Hide the palette to free up screen space
+                document.getElementById('paintPalette').classList.add('hidden');
             };
             swatch.addEventListener('click', selectColor);
             swatch.addEventListener('touchstart', selectColor, {passive: false});
@@ -402,12 +405,37 @@ class WalkthroughEngine {
                     }));
                 }
                 
+                // --- Paint Mesh for Painting Mechanic (6 independent faces) ---
+                const paintMaterials = [];
+                const paintCanvases = [];
+                
+                for (let i = 0; i < 6; i++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 256; 
+                    canvas.height = 256;
+                    const ctx = canvas.getContext('2d'); // Transparent by default
+
+                    const texture = new THREE.CanvasTexture(canvas);
+                    paintCanvases.push({ ctx, texture });
+
+                    paintMaterials.push(new THREE.MeshBasicMaterial({ 
+                        map: texture, 
+                        transparent: true,
+                        opacity: 1.0,
+                        depthWrite: false
+                    }));
+                }
+                
+                const paintMesh = new THREE.Mesh(geometry.clone(), paintMaterials);
+                paintMesh.scale.set(1.01, 1.01, 1.01); // Just slightly larger than base, but smaller than dirt
+                mesh.add(paintMesh);
+                
                 // Slightly larger mesh to wrap the original
                 const dirtMesh = new THREE.Mesh(geometry.clone(), dirtMaterials);
                 dirtMesh.scale.set(1.02, 1.02, 1.02);
                 
                 // Attach the canvas contexts to userData for raycasting later
-                dirtMesh.userData = { isDirt: true, canvases: canvases, parentItem: mesh };
+                dirtMesh.userData = { isDirt: true, canvases: canvases, paintCanvases: paintCanvases, parentItem: mesh };
                 mesh.add(dirtMesh); // Add dirt as child of the interactive mesh
                 
                 this.scene.add(mesh);
@@ -552,12 +580,18 @@ class WalkthroughEngine {
                                 this.emitWaterParticles(this.currentIntersect.point);
                                 
                             } else if (this.activeTool === 'brush') {
-                                // Brush: Paint UNDER dirt (destination-over)
-                                ctx.globalCompositeOperation = 'destination-over';
-                                ctx.beginPath();
-                                ctx.arc(x, y, this.paintSize, 0, Math.PI * 2);
-                                ctx.fillStyle = this.paintColor;
-                                ctx.fill();
+                                // Brush: Paint ON the dedicated paint mesh (source-over so new strokes overlap old ones)
+                                const paintData = intersect.object.userData.paintCanvases[faceIndex];
+                                const pCtx = paintData.ctx;
+                                const pTex = paintData.texture;
+                                
+                                pCtx.globalCompositeOperation = 'source-over';
+                                pCtx.beginPath();
+                                pCtx.arc(x, y, this.paintSize, 0, Math.PI * 2);
+                                pCtx.fillStyle = this.paintColor;
+                                pCtx.fill();
+                                
+                                pTex.needsUpdate = true;
                             }
                             
                             tex.needsUpdate = true;
